@@ -97,10 +97,10 @@ plan-3/run.sh                         [init]
 **Goal:** Boot microVM via `plan-3/run.sh`, compile Rust inside the guest, run binary, and verify clean exit.
 
 **Tasks:**
-- [ ] Execute `./plan-3/run.sh`
-- [ ] Verify output banner and `Hello, world!` from guest-compiled binary
-- [ ] Verify Firecracker exits cleanly with exit code 0
-- [ ] Tick all completed task checkboxes in `plan-3/plan-3-rust-playground-mvp.md`
+- [x] Execute `./plan-3/run.sh`
+- [x] Verify output banner and `Hello, world!` from guest-compiled binary
+- [x] Verify Firecracker exits cleanly with exit code 0
+- [x] Tick all completed task checkboxes in `plan-3/plan-3-rust-playground-mvp.md`
 
 **Done when:** `./plan-3/run.sh` runs unattended, outputs `Hello, world!`, and exits with code 0.
 
