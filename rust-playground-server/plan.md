@@ -151,12 +151,12 @@ and runs a minimal `fn main()` snippet using the toolchain image.
 **Goal**: Working HTTP server wiring routes, handler, concurrency guard, and tracing.
 
 **Tasks**:
-- [ ] `GET /` → `include_str!("../static/index.html")` as `text/html`.
-- [ ] `POST /run` body: `{ "code": "..." }` → response: `{ "stdout": "...", "elapsed_ms": 1234 }` or
+- [x] `GET /` → `include_str!("../static/index.html")` as `text/html`.
+- [x] `POST /run` body: `{ "code": "..." }` → response: `{ "stdout": "...", "elapsed_ms": 1234 }` or
       `{ "error": "..." }`. Always HTTP 200.
-- [ ] `tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init()` in `main`.
-- [ ] Bind `0.0.0.0:${PORT:-3000}`.
-- [ ] Graceful shutdown: `axum::serve(...).with_graceful_shutdown(shutdown_signal())`.
+- [x] `tracing_subscriber::fmt().with_env_filter(EnvFilter::from_default_env()).init()` in `main`.
+- [x] Bind `0.0.0.0:${PORT:-3000}`.
+- [x] Graceful shutdown: `axum::serve(...).with_graceful_shutdown(shutdown_signal())`.
 
 **Done when**: `curl -s -X POST http://localhost:3000/run -H 'Content-Type: application/json'
 -d '{"code":"fn main(){println!(\"ok\");}"}' | jq .stdout` returns `"ok\n"`.
