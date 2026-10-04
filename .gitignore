@@ -8,3 +8,5 @@ squashfs-root/
 release-*/
 *.ext4
 *.squashfs*
+
+handoff.md
