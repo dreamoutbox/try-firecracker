@@ -64,7 +64,7 @@ Firecracker:                                   → ip link set lo up
 ### Phase 2: Guest Init Script with Network Setup & Curl Probe
 - Goal: Create guest init script that configures guest networking, verifies DNS resolution, performs an outbound curl test to public internet, and reboots.
 - Tasks:
-  - [ ] Write `plan-4/init.sh`:
+  - [x] Write `plan-4/init.sh`:
     - Mount `/proc`, `/sys`, and `/dev`
     - Export standard `PATH=/usr/local/bin:/usr/local/sbin:/usr/bin:/usr/sbin:/bin:/sbin`
     - Bring up loopback interface (`ip link set lo up`)
@@ -74,7 +74,7 @@ Firecracker:                                   → ip link set lo up
     - Execute curl test: `curl -sSf https://icanhazip.com` (with fallback to `curl -Is https://cloudflare.com`)
     - Output result banner to serial console
     - Initiate clean exit via `reboot -f`
-  - [ ] Set executable permissions on `plan-4/init.sh` (`chmod +x`)
+  - [x] Set executable permissions on `plan-4/init.sh` (`chmod +x`)
 - Done when: `plan-4/init.sh` exists, is executable, and contains full network initialization, curl execution, and reboot logic.
 
 ---
