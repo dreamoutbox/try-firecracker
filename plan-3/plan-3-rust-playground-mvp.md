@@ -51,13 +51,13 @@ plan-3/run.sh                         [init]
 **Goal:** Create guest init script that mounts filesystems, sets up environment, compiles rust code, executes binary, and initiates clean reboot.
 
 **Tasks:**
-- [ ] Write `plan-3/init.sh`:
+- [x] Write `plan-3/init.sh`:
   - Mount `/proc`, `/sys`, `/dev` (devtmpfs)
   - Export `HOME=/root` and `CARGO_HOME=/root/.cargo`
   - Compile `/rust_example` with `cargo build --release -q`
   - Execute `./target/release/rust_example`
   - Call `reboot -f` for clean Firecracker exit
-- [ ] Set executable permissions on `plan-3/init.sh` (`chmod +x`)
+- [x] Set executable permissions on `plan-3/init.sh` (`chmod +x`)
 
 **Done when:** `plan-3/init.sh` exists, is executable, and contains the required boot/compile/shutdown commands.
 
