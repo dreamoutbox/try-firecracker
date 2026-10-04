@@ -68,12 +68,12 @@ plan-3/run.sh                         [init]
 **Goal:** Implement `plan-3/setup.sh` that prepares Alpine rootfs with baked-in Rust toolchain and packs it into `assets/rust-playground.ext4`.
 
 **Tasks:**
-- [ ] Implement `plan-3/setup.sh` with dependencies and KVM verification
-- [ ] Fetch/extract `apk.static` in `assets/` if not present
-- [ ] Stage Alpine minirootfs and run `apk.static --root <staging> add rust cargo`
-- [ ] Copy `plan-3/rust_example/` (excluding target) and `plan-3/init.sh` into staging rootfs
-- [ ] Pack staging directory into 1 GiB ext4 image (`assets/rust-playground.ext4`) using `mkfs.ext4 -d`
-- [ ] Ensure non-root ownership on created assets
+- [x] Implement `plan-3/setup.sh` with dependencies and KVM verification
+- [x] Fetch/extract `apk.static` in `assets/` if not present
+- [x] Stage Alpine minirootfs and run `apk.static --root <staging> add rust cargo`
+- [x] Copy `plan-3/rust_example/` (excluding target) and `plan-3/init.sh` into staging rootfs
+- [x] Pack staging directory into 1 GiB ext4 image (`assets/rust-playground.ext4`) using `mkfs.ext4 -d`
+- [x] Ensure non-root ownership on created assets
 
 **Done when:** Running `plan-3/setup.sh` completes cleanly and `assets/rust-playground.ext4` exists with valid ext4 filesystem containing `/usr/bin/rustc` and `/rust_example`.
 
