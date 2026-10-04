@@ -1,0 +1,10 @@
+.venv/
+target/
+.env
+
+# Firecracker: downloaded binaries and images — too large for git
+assets/
+squashfs-root/
+release-*/
+*.ext4
+*.squashfs*
