@@ -126,21 +126,21 @@ and runs a minimal `fn main()` snippet using the toolchain image.
 **Goal**: Spawn Firecracker for a given workspace, capture serial output, enforce timeout.
 
 **Tasks**:
-- [ ] Implement `runner::run(repo_root: &Path, workspace_ext4: &Path, run_id: &Uuid) -> anyhow::Result<String>`:
+- [x] Implement `runner::run(repo_root: &Path, workspace_ext4: &Path, run_id: &Uuid) -> anyhow::Result<String>`:
       - Serialize per-run `vm_config.json` into `/tmp/run-<id>/vm_config.json` with:
         - `boot-source`: `assets/vmlinux`, `console=ttyS0 reboot=k panic=1 init=/init`.
         - `drives[0]`: `assets/rust-toolchain.ext4`, root device, read-only.
         - `drives[1]`: workspace ext4 (absolute path), not root, read-write.
-        - `machine-config`: 1 vCPU, 256 MiB RAM.
+        - `machine-config`: 2 vCPUs, 512 MiB RAM.
       - Spawn `assets/firecracker --no-api --config-file /tmp/run-<id>/vm_config.json`
         as `tokio::process::Command` with `stdout(Stdio::piped())`, `stderr(Stdio::piped())`, `current_dir(repo_root)`.
       - `child.wait_with_output().await` to collect stdout bytes.
       - Return stdout as `String` (lossy UTF-8).
-- [ ] In `main.rs`: wrap call in `tokio::time::timeout(Duration::from_secs(30), ...)`.
+- [x] In `main.rs`: wrap call in `tokio::time::timeout(Duration::from_secs(30), ...)`.
       On `Elapsed`, kill child, return `Err("Execution timed out")`.
-- [ ] Add `MAX_CONCURRENT_RUNS: usize = 4` semaphore (`tokio::sync::Semaphore`) in `main.rs`.
+- [x] Add `MAX_CONCURRENT_RUNS: usize = 4` semaphore (`tokio::sync::Semaphore`) in `main.rs`.
       Acquire permit before creating workspace; release on drop.
-- [ ] Integration test: run `r#"fn main(){println!("firecracker-ok");}"#`, assert stdout contains `firecracker-ok`.
+- [x] Integration test: run `r#"fn main(){println!("firecracker-ok");}"#`, assert stdout contains `firecracker-ok`.
 
 **Done when**: Integration test passes; `cargo clippy -- -D warnings` clean.
 
