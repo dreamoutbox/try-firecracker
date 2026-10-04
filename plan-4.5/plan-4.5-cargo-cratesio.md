@@ -99,9 +99,9 @@ Firecracker:                                   → ip link set lo up
 ### Phase 4: End-to-End Verification
 - Goal: Boot microVM via `plan-4.5/run.sh`, let cargo download crates (`anyhow`, `serde`, `serde_json`) from crates.io inside the guest, compile the application, execute the binary, and verify clean exit.
 - Tasks:
-  - [ ] Run `./plan-4.5/run.sh`
-  - [ ] Verify cargo fetches packages from crates.io and compiles dependencies inside the guest
-  - [ ] Verify execution of `rust_cratesio_example` outputs expected JSON
-  - [ ] Verify Firecracker terminates cleanly with exit code 0
-  - [ ] Mark completed tasks in `plan-4.5/plan-4.5-cargo-cratesio.md` and `TODO.md`
+  - [x] Run `./plan-4.5/run.sh`
+  - [x] Verify cargo fetches packages from crates.io and compiles dependencies inside the guest
+  - [x] Verify execution of `rust_cratesio_example` outputs expected JSON
+  - [x] Verify Firecracker terminates cleanly with exit code 0
+  - [x] Mark completed tasks in `plan-4.5/plan-4.5-cargo-cratesio.md` and `TODO.md`
 - Done when: `./plan-4.5/run.sh` runs unattended, compiles dependencies fetched from crates.io, prints output, and exits with code 0.
