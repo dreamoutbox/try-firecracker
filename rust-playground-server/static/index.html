@@ -172,16 +172,20 @@
         main {
             flex: 1;
             display: flex;
-            flex-direction: column;
+            flex-direction: row;
             overflow: hidden;
             position: relative;
+            width: 100%;
+            height: calc(100% - 56px);
         }
 
         #editor-container {
-            flex: 3;
-            min-height: 200px;
+            flex: 1 1 auto;
+            min-width: 250px;
+            height: 100%;
             position: relative;
             background: #0f141c;
+            overflow: hidden;
         }
 
         .cm-editor {
@@ -210,25 +214,32 @@
         }
 
         .resizer {
-            height: 6px;
+            width: 6px;
+            height: 100%;
             background: var(--bg-base);
-            border-top: 1px solid var(--border-subtle);
-            border-bottom: 1px solid var(--border-subtle);
-            cursor: row-resize;
+            border-left: 1px solid var(--border-subtle);
+            border-right: 1px solid var(--border-subtle);
+            cursor: col-resize;
+            user-select: none;
+            flex-shrink: 0;
             transition: background 0.15s;
+            z-index: 5;
         }
 
-        .resizer:hover {
+        .resizer:hover, .resizer.dragging {
             background: var(--accent-rust);
         }
 
         #output-panel {
-            flex: 2;
-            min-height: 140px;
+            width: 42%;
+            min-width: 220px;
+            max-width: calc(100% - 220px);
+            height: 100%;
             background: var(--bg-surface);
             display: flex;
             flex-direction: column;
             overflow: hidden;
+            flex-shrink: 0;
         }
 
         .output-header {
@@ -429,6 +440,70 @@
         }
 
         initEditor();
+
+        // Drag-to-resize logic for left editor & right output panel
+        const mainContainer = document.querySelector("main");
+        const resizer = document.getElementById("resizer");
+        const outputPanel = document.getElementById("output-panel");
+
+        let isDragging = false;
+
+        resizer.addEventListener("mousedown", (e) => {
+            isDragging = true;
+            resizer.classList.add("dragging");
+            document.body.style.cursor = "col-resize";
+            document.body.style.userSelect = "none";
+            e.preventDefault();
+        });
+
+        window.addEventListener("mousemove", (e) => {
+            if (!isDragging) return;
+            const containerRect = mainContainer.getBoundingClientRect();
+            const newWidth = containerRect.right - e.clientX;
+            const minWidth = 200;
+            const maxWidth = containerRect.width - 200;
+            if (newWidth >= minWidth && newWidth <= maxWidth) {
+                outputPanel.style.width = `${newWidth}px`;
+                outputPanel.style.flex = "none";
+            }
+        });
+
+        window.addEventListener("mouseup", () => {
+            if (isDragging) {
+                isDragging = false;
+                resizer.classList.remove("dragging");
+                document.body.style.cursor = "";
+                document.body.style.userSelect = "";
+            }
+        });
+
+        // Touch support for resizing
+        resizer.addEventListener("touchstart", () => {
+            isDragging = true;
+            resizer.classList.add("dragging");
+            document.body.style.userSelect = "none";
+        }, { passive: true });
+
+        window.addEventListener("touchmove", (e) => {
+            if (!isDragging || !e.touches[0]) return;
+            const containerRect = mainContainer.getBoundingClientRect();
+            const touch = e.touches[0];
+            const newWidth = containerRect.right - touch.clientX;
+            const minWidth = 150;
+            const maxWidth = containerRect.width - 150;
+            if (newWidth >= minWidth && newWidth <= maxWidth) {
+                outputPanel.style.width = `${newWidth}px`;
+                outputPanel.style.flex = "none";
+            }
+        }, { passive: true });
+
+        window.addEventListener("touchend", () => {
+            if (isDragging) {
+                isDragging = false;
+                resizer.classList.remove("dragging");
+                document.body.style.userSelect = "";
+            }
+        });
 
         // Run execution logic
         const btnRun = document.getElementById("btn-run");
