@@ -65,7 +65,7 @@ Firecracker:                                   → ip link set lo up
 ### Phase 2: Setup Script & Ext4 Rootfs Generation
 - Goal: Implement `plan-4.5/setup.sh` that prepares Alpine rootfs with Rust toolchain, CA certificates, and `plan-4.5/rust_example`, packing into `assets/rust-cratesio.ext4`.
 - Tasks:
-  - [ ] Write `plan-4.5/setup.sh`:
+  - [x] Write `plan-4.5/setup.sh`:
     - Ensure host prerequisites and KVM access checks
     - Verify `assets/firecracker`, `assets/vmlinux`, and `assets/apk.static`
     - Extract Alpine minirootfs to staging directory
@@ -74,7 +74,7 @@ Firecracker:                                   → ip link set lo up
     - Copy `plan-4.5/init.sh` as `/init` in staging rootfs
     - Pack staging directory into 2 GiB ext4 image (`assets/rust-cratesio.ext4`) using `mkfs.ext4 -d`
     - Preserve non-root ownership on generated assets
-  - [ ] Set executable permissions on `plan-4.5/setup.sh` (`chmod +x`)
+  - [x] Set executable permissions on `plan-4.5/setup.sh` (`chmod +x`)
 - Done when: Running `./plan-4.5/setup.sh` creates `assets/rust-cratesio.ext4` containing Rust toolchain, CA certificates, and `/rust_example`.
 
 ---
