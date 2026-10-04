@@ -82,13 +82,13 @@ Firecracker:                                   → ip link set lo up
 ### Phase 3: Setup Script & Alpine Network Rootfs Generation
 - Goal: Implement `plan-4/setup.sh` that prepares Alpine rootfs with curl and TLS certificates, packing it into `assets/alpine-net.ext4`.
 - Tasks:
-  - [ ] Write `plan-4/setup.sh` with host prerequisites and KVM access checks
-  - [ ] Fetch/verify `assets/firecracker`, `assets/vmlinux`, and `assets/apk.static`
-  - [ ] Extract Alpine minirootfs to staging directory
-  - [ ] Install `curl` and `ca-certificates` into staging rootfs using `apk.static --root <staging>`
-  - [ ] Copy `plan-4/init.sh` as `/init` in staging rootfs
-  - [ ] Pack staging directory into 256 MiB ext4 image (`assets/alpine-net.ext4`) using `mkfs.ext4 -d`
-  - [ ] Preserve non-root ownership on generated assets
+  - [x] Write `plan-4/setup.sh` with host prerequisites and KVM access checks
+  - [x] Fetch/verify `assets/firecracker`, `assets/vmlinux`, and `assets/apk.static`
+  - [x] Extract Alpine minirootfs to staging directory
+  - [x] Install `curl` and `ca-certificates` into staging rootfs using `apk.static --root <staging>`
+  - [x] Copy `plan-4/init.sh` as `/init` in staging rootfs
+  - [x] Pack staging directory into 256 MiB ext4 image (`assets/alpine-net.ext4`) using `mkfs.ext4 -d`
+  - [x] Preserve non-root ownership on generated assets
 - Done when: `plan-4/setup.sh` executes cleanly and generates `assets/alpine-net.ext4` with valid ext4 filesystem containing `/usr/bin/curl` and `/init`.
 
 ---
