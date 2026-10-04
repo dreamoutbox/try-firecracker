@@ -26,7 +26,7 @@ nameserver 1.1.1.1
 nameserver 8.8.8.8
 EOF
 
-echo "Guest IP: $(ip -4 addr show dev eth0 | grep -oP 'inet \K[\d.]+')"
+echo "Guest IP: $(ip -4 addr show dev eth0 | awk '/inet / {print $2}')"
 echo "Default Route: $(ip route | grep default)"
 
 echo "=== Testing Internet Connectivity via curl ==="

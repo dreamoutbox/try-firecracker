@@ -113,10 +113,10 @@ Firecracker:                                   → ip link set lo up
 ### Phase 5: End-to-End Verification
 - Goal: Boot microVM via `plan-4/run.sh`, establish network connection, query public internet endpoint via curl, and verify clean exit.
 - Tasks:
-  - [ ] Run `./plan-4/run.sh`
-  - [ ] Verify guest brings up `eth0` and receives public IP response via `curl`
-  - [ ] Verify Firecracker terminates cleanly with exit code 0
-  - [ ] Tick completed tasks in `plan-4/plan-4-microvm-with-internet.md`
+  - [x] Run `./plan-4/run.sh`
+  - [x] Verify guest brings up `eth0` and receives public IP response via `curl`
+  - [x] Verify Firecracker terminates cleanly with exit code 0
+  - [x] Tick completed tasks in `plan-4/plan-4-microvm-with-internet.md`
 - Done when: `./plan-4/run.sh` executes unattended, outputs the public IP or HTTP response via curl, and exits with code 0.
 
 ---
