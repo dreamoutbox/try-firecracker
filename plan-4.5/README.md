@@ -12,3 +12,6 @@ This directory contains a sample Rust application (`rust_example/`) configured t
 - `rust_example/Cargo.toml`: Declares dependencies on `anyhow`, `serde`, and `serde_json`.
 - `rust_example/src/main.rs`: Structured Rust 2024 program producing JSON output serialized via `serde_json`.
 - `rust_example/Cargo.lock`: Pinned dependency lockfile.
+- `net-setup.sh` / `net-cleanup.sh`: Host TAP setup/cleanup for dedicated interface `tap1` (`172.16.1.1/24`).
+- `vm_config.json`: Firecracker configuration pointing to `tap1` and `assets/rust-cratesio.ext4`.
+- `run.sh`: Runner script orchestrating rootfs build, `tap1` provisioning, and Firecracker execution.

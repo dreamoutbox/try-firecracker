@@ -10,8 +10,8 @@ FC_BIN="${REPO_ROOT}/assets/firecracker"
 # 1. Ensure rootfs and dependencies are built
 "${SCRIPT_DIR}/setup.sh"
 
-# 2. Ensure host TAP device and NAT routing are configured
-"${REPO_ROOT}/plan-4/net-setup.sh"
+# 2. Ensure host TAP device (tap1) and NAT routing are configured
+"${SCRIPT_DIR}/net-setup.sh"
 
 # 3. Check /dev/kvm access
 if [ ! -r /dev/kvm ] || [ ! -w /dev/kvm ]; then

@@ -11,18 +11,18 @@ to fetch crates directly from [crates.io](https://crates.io) at compile time.
 ```
 Host (runtime)                               Guest (runtime)
 ─────────────────────────────────────────    ─────────────────────────────────
-TAP Interface: tap0 (172.16.0.1/24)          virtio-net: eth0 (172.16.0.2/24)
-  owned by $USER                             gateway: 172.16.0.1
+TAP Interface: tap1 (172.16.1.1/24)          virtio-net: eth0 (172.16.1.2/24)
+  owned by $USER                             gateway: 172.16.1.1
                                              DNS: 1.1.1.1, 8.8.8.8
 sysctl: net.ipv4.ip_forward = 1
 iptables: NAT masquerade to host egress       /init
                                                → mount /proc /sys /dev
 Firecracker:                                   → ip link set lo up
-  --no-api --config-file vm_config.json        → ip addr add 172.16.0.2/24 dev eth0
+  --no-api --config-file vm_config.json        → ip addr add 172.16.1.2/24 dev eth0
   network-interfaces:                          → ip link set eth0 up
-    - iface_id: net0                           → ip route add default via 172.16.0.1
-      guest_mac: AA:FC:00:00:00:01             → echo nameserver > /etc/resolv.conf
-      host_dev_name: tap0                      → cd /rust_example
+    - iface_id: net0                           → ip route add default via 172.16.1.1
+      guest_mac: AA:FC:00:00:00:02             → echo nameserver > /etc/resolv.conf
+      host_dev_name: tap1                      → cd /rust_example
                                                → cargo build --release
                                                   (fetches from crates.io via eth0)
                                                → ./target/release/rust_cratesio_example
@@ -32,7 +32,8 @@ Firecracker:                                   → ip link set lo up
 ```
 
 **Key choices:**
-- **In-VM Dependency Resolution**: Cargo runs in online mode without `--offline`, fetching crates from crates.io over virtio-net (`eth0` -> `tap0` -> host NAT).
+- **Dedicated TAP Interface**: Uses `tap1` on `172.16.1.0/24` to avoid collisions with Plan 4's `tap0` (`172.16.0.0/24`), enabling concurrent microVM runs.
+- **In-VM Dependency Resolution**: Cargo runs in online mode without `--offline`, fetching crates from crates.io over virtio-net (`eth0` -> `tap1` -> host NAT).
 - **CA Certificates Embedded**: `ca-certificates` is installed into the rootfs via `apk.static` so Cargo and OpenSSL can validate `crates.io` TLS certificates.
 - **Resource Sizing**: 2 vCPUs and 1024 MiB RAM to provide compilation headroom for procedural macros (`serde_derive`).
 - **Disk Sizing**: 2 GiB ext4 rootfs to accommodate the Rust toolchain, Cargo registry index cache, downloaded crate archives, and target build directory.

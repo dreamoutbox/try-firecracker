@@ -16,10 +16,10 @@ echo "=== Initializing Guest Networking ==="
 # Bring up loopback interface
 ip link set lo up
 
-# Configure eth0 with static IP and default gateway
-ip addr add 172.16.0.2/24 dev eth0
+# Configure eth0 with static IP and default gateway (tap1 / 172.16.1.0/24)
+ip addr add 172.16.1.2/24 dev eth0
 ip link set eth0 up
-ip route add default via 172.16.0.1 dev eth0
+ip route add default via 172.16.1.1 dev eth0
 
 # Configure DNS nameservers
 mkdir -p /etc
