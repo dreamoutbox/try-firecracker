@@ -28,10 +28,9 @@ A self-hosted Rust playground inspired by [play.rust-lang.org](https://play.rust
    ```bash
    make serve
    ```
-   Or manually:
+   Or directly:
    ```bash
-   ./rust-playground-server/setup.sh
-   cargo run --release --manifest-path rust-playground-server/Cargo.toml
+   ./rust-playground-server/start.sh
    ```
 
 2. **Open in browser**:

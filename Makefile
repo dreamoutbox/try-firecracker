@@ -11,5 +11,5 @@ build:
 test:
 	cargo test --manifest-path rust-playground-server/Cargo.toml
 
-serve: setup
-	cargo run --release --manifest-path rust-playground-server/Cargo.toml
+serve:
+	./rust-playground-server/start.sh
