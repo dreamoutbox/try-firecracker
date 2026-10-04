@@ -48,7 +48,7 @@ Firecracker:                                   → ip link set lo up
 ### Phase 1: Guest Init Script with Network Setup & In-VM Cargo Build
 - Goal: Create `plan-4.5/init.sh` that initializes guest networking, runs `cargo build --release` fetching from crates.io, executes the binary, and cleanly reboots.
 - Tasks:
-  - [ ] Write `plan-4.5/init.sh`:
+  - [x] Write `plan-4.5/init.sh`:
     - Mount `/proc`, `/sys`, and `/dev`
     - Bring up `lo` and configure `eth0` with static IP `172.16.0.2/24` and gateway `172.16.0.1`
     - Configure `/etc/resolv.conf` with DNS nameservers (`1.1.1.1`, `8.8.8.8`)
@@ -57,7 +57,7 @@ Firecracker:                                   → ip link set lo up
     - Run `cargo build --release` to fetch and compile dependencies from crates.io
     - Execute `./target/release/rust_cratesio_example`
     - Call `reboot -f` for clean Firecracker exit
-  - [ ] Set executable permissions on `plan-4.5/init.sh` (`chmod +x`)
+  - [x] Set executable permissions on `plan-4.5/init.sh` (`chmod +x`)
 - Done when: `plan-4.5/init.sh` exists, is executable, and contains network initialization, online cargo build, execution, and reboot logic.
 
 ---
