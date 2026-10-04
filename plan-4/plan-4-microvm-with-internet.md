@@ -47,16 +47,16 @@ Firecracker:                                   → ip link set lo up
 ### Phase 1: Host Virtual Network & TAP Management Scripts
 - Goal: Create idempotent host network setup and teardown scripts for TAP interface provisioning, IP forwarding, and iptables NAT masquerading.
 - Tasks:
-  - [ ] Write `plan-4/net-setup.sh`:
+  - [x] Write `plan-4/net-setup.sh`:
     - Detect primary outbound network interface using `ip route get 1.1.1.1`
     - Create `tap0` interface owned by `$USER` (`ip tuntap add dev tap0 mode tap user "$USER"`) if missing
     - Assign `172.16.0.1/24` to `tap0` and bring interface up (`ip link set dev tap0 up`)
     - Enable host IPv4 forwarding (`sysctl -w net.ipv4.ip_forward=1`)
     - Add idempotent `iptables` NAT masquerade and FORWARD rules between `tap0` and outbound interface
-  - [ ] Write `plan-4/net-cleanup.sh`:
+  - [x] Write `plan-4/net-cleanup.sh`:
     - Remove iptables NAT and FORWARD rules created by setup
     - Delete `tap0` interface (`ip link delete dev tap0`)
-  - [ ] Set executable permissions on both scripts (`chmod +x`)
+  - [x] Set executable permissions on both scripts (`chmod +x`)
 - Done when: Running `./plan-4/net-setup.sh` configures `tap0` with `172.16.0.1/24`, enables forwarding, and `./plan-4/net-cleanup.sh` removes the interface and rules cleanly.
 
 ---
