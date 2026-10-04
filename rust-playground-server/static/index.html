@@ -3,9 +3,499 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rust Playground</title>
+    <title>Rust Playground — Powered by Firecracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-base: #0a0d12;
+            --bg-surface: #121820;
+            --bg-elevated: #1a222d;
+            --border-subtle: #263342;
+            --border-strong: #384b60;
+            --text-main: #e6edf3;
+            --text-muted: #8b9bb0;
+            --accent-rust: #e05d44;
+            --accent-rust-hover: #f06e55;
+            --accent-cyan: #38bdf8;
+            --accent-green: #22c55e;
+            --accent-amber: #f59e0b;
+            --accent-red: #ef4444;
+            --font-ui: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+            --font-mono: 'Fira Code', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html, body {
+            height: 100%;
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-ui);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        header {
+            height: 56px;
+            background: var(--bg-surface);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1.25rem;
+            flex-shrink: 0;
+            z-index: 10;
+        }
+
+        .header-brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .brand-logo {
+            width: 28px;
+            height: 28px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #e05d44 0%, #b83a22 100%);
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(224, 93, 68, 0.3);
+        }
+
+        .brand-logo svg {
+            width: 18px;
+            height: 18px;
+            fill: #ffffff;
+        }
+
+        .brand-title {
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: -0.01em;
+            color: var(--text-main);
+        }
+
+        .brand-badge {
+            font-size: 0.75rem;
+            font-weight: 500;
+            color: var(--accent-cyan);
+            background: rgba(56, 189, 248, 0.1);
+            border: 1px solid rgba(56, 189, 248, 0.2);
+            padding: 0.2rem 0.5rem;
+            border-radius: 9999px;
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+
+        .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+            background-color: var(--accent-cyan);
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        button.btn-run {
+            background: linear-gradient(180deg, var(--accent-rust-hover) 0%, var(--accent-rust) 100%);
+            color: #ffffff;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 6px;
+            padding: 0.45rem 1.1rem;
+            font-size: 0.875rem;
+            font-weight: 600;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: all 0.15s ease;
+            box-shadow: 0 2px 6px rgba(224, 93, 68, 0.25);
+        }
+
+        button.btn-run:hover:not(:disabled) {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(224, 93, 68, 0.4);
+            filter: brightness(1.05);
+        }
+
+        button.btn-run:active:not(:disabled) {
+            transform: translateY(0);
+        }
+
+        button.btn-run:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            filter: grayscale(0.2);
+        }
+
+        .kbd-hint {
+            font-size: 0.7rem;
+            font-weight: 500;
+            background: rgba(0, 0, 0, 0.25);
+            border-radius: 4px;
+            padding: 0.15rem 0.35rem;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+
+        button.btn-secondary {
+            background: var(--bg-elevated);
+            color: var(--text-muted);
+            border: 1px solid var(--border-subtle);
+            border-radius: 6px;
+            padding: 0.45rem 0.85rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        button.btn-secondary:hover {
+            color: var(--text-main);
+            border-color: var(--border-strong);
+            background: #222d3c;
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            position: relative;
+        }
+
+        #editor-container {
+            flex: 3;
+            min-height: 200px;
+            position: relative;
+            background: #0f141c;
+        }
+
+        .cm-editor {
+            height: 100%;
+            font-family: var(--font-mono) !important;
+            font-size: 14px !important;
+            line-height: 1.55 !important;
+        }
+
+        .cm-scroller {
+            overflow: auto;
+        }
+
+        #code-fallback {
+            width: 100%;
+            height: 100%;
+            background: #0f141c;
+            color: #d1d5db;
+            font-family: var(--font-mono);
+            font-size: 14px;
+            line-height: 1.55;
+            padding: 1rem;
+            border: none;
+            resize: none;
+            outline: none;
+        }
+
+        .resizer {
+            height: 6px;
+            background: var(--bg-base);
+            border-top: 1px solid var(--border-subtle);
+            border-bottom: 1px solid var(--border-subtle);
+            cursor: row-resize;
+            transition: background 0.15s;
+        }
+
+        .resizer:hover {
+            background: var(--accent-rust);
+        }
+
+        #output-panel {
+            flex: 2;
+            min-height: 140px;
+            background: var(--bg-surface);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .output-header {
+            height: 38px;
+            background: var(--bg-elevated);
+            border-bottom: 1px solid var(--border-subtle);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 1rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            letter-spacing: 0.03em;
+            text-transform: uppercase;
+        }
+
+        .output-status {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.75rem;
+            text-transform: none;
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.15rem 0.5rem;
+            border-radius: 4px;
+            font-weight: 500;
+        }
+
+        .status-badge.idle {
+            color: var(--text-muted);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .status-badge.running {
+            color: var(--accent-amber);
+            background: rgba(245, 158, 11, 0.12);
+        }
+
+        .status-badge.success {
+            color: var(--accent-green);
+            background: rgba(34, 197, 94, 0.12);
+        }
+
+        .status-badge.error {
+            color: var(--accent-red);
+            background: rgba(239, 68, 68, 0.12);
+        }
+
+        #output-content {
+            flex: 1;
+            padding: 1rem;
+            font-family: var(--font-mono);
+            font-size: 13px;
+            line-height: 1.6;
+            color: var(--text-main);
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-break: break-all;
+            background: #0d1218;
+        }
+
+        .placeholder-text {
+            color: #4b5a6c;
+            font-style: italic;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: #ffffff;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
 </head>
 <body>
-    <h1>Rust Playground</h1>
+    <header>
+        <div class="header-brand">
+            <div class="brand-logo" aria-hidden="true">
+                <svg viewBox="0 0 24 24">
+                    <path d="M12 2L2 19.5h20L12 2zm0 4.8L18.4 18H5.6L12 6.8z"/>
+                </svg>
+            </div>
+            <span class="brand-title">Rust Playground</span>
+            <span class="brand-badge">
+                <span class="status-dot"></span>
+                Firecracker MicroVM
+            </span>
+        </div>
+
+        <div class="header-actions">
+            <button id="btn-reset" class="btn-secondary" title="Reset code snippet">Reset</button>
+            <button id="btn-run" class="btn-run" title="Compile and execute inside microVM (Ctrl+Enter)">
+                <span id="run-spinner" class="spinner" style="display: none;"></span>
+                <span id="run-label">Run</span>
+                <span class="kbd-hint">Ctrl+Enter</span>
+            </button>
+        </div>
+    </header>
+
+    <main>
+        <div id="editor-container">
+            <textarea id="code-fallback" spellcheck="false"></textarea>
+        </div>
+
+        <div id="resizer" class="resizer"></div>
+
+        <section id="output-panel">
+            <div class="output-header">
+                <span>Output Console</span>
+                <div class="output-status">
+                    <span id="exec-status" class="status-badge idle">Ready</span>
+                    <span id="exec-time" style="display: none; color: var(--text-muted); font-size: 0.75rem;"></span>
+                </div>
+            </div>
+            <pre id="output-content"><span class="placeholder-text">Click "Run" or press Ctrl+Enter to compile and run in a microVM...</span></pre>
+        </section>
+    </main>
+
+    <script type="module">
+        const DEFAULT_CODE = `fn main() {
+    println!("Hello from Firecracker microVM!");
+
+    let numbers = [1, 2, 3, 4, 5];
+    let sum: i32 = numbers.iter().sum();
+    println!("Sum of numbers: {sum}");
+}
+`;
+
+        const fallback = document.getElementById("code-fallback");
+        fallback.value = DEFAULT_CODE;
+
+        let editorView = null;
+
+        // Strip ANSI escape codes from compiler and terminal output
+        function stripAnsi(text) {
+            return text.replace(/[\u001b\u009b][[()#;?]*(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><]/g, '');
+        }
+
+        function getCode() {
+            if (editorView) {
+                return editorView.state.doc.toString();
+            }
+            return fallback.value;
+        }
+
+        function setCode(code) {
+            if (editorView) {
+                editorView.dispatch({
+                    changes: { from: 0, to: editorView.state.doc.length, insert: code }
+                });
+            } else {
+                fallback.value = code;
+            }
+        }
+
+        // Initialize CodeMirror 6 via CDN, falling back to textarea on failure
+        async function initEditor() {
+            try {
+                const { basicSetup, EditorView } = await import("https://esm.sh/codemirror@6.0.1");
+                const { rust } = await import("https://esm.sh/@codemirror/lang-rust@6.0.1");
+                const { oneDark } = await import("https://esm.sh/@codemirror/theme-one-dark@6.1.2");
+
+                fallback.style.display = "none";
+                editorView = new EditorView({
+                    doc: DEFAULT_CODE,
+                    extensions: [
+                        basicSetup,
+                        rust(),
+                        oneDark,
+                        EditorView.theme({
+                            "&": { height: "100%", background: "#0f141c" },
+                            ".cm-gutters": { backgroundColor: "#0f141c", borderRight: "1px solid #1e2633", color: "#4f5e73" },
+                            ".cm-content": { caretColor: "#38bdf8" },
+                            "&.cm-focused .cm-cursor": { borderLeftColor: "#38bdf8" },
+                            "&.cm-focused .cm-selectionBackground, ::selection": { backgroundColor: "#1d3557" },
+                            ".cm-activeLine": { backgroundColor: "#141c26" }
+                        })
+                    ],
+                    parent: document.getElementById("editor-container")
+                });
+            } catch (err) {
+                console.warn("CDN CodeMirror load failed; using enhanced textarea fallback", err);
+                fallback.style.display = "block";
+            }
+        }
+
+        initEditor();
+
+        // Run execution logic
+        const btnRun = document.getElementById("btn-run");
+        const btnReset = document.getElementById("btn-reset");
+        const runSpinner = document.getElementById("run-spinner");
+        const runLabel = document.getElementById("run-label");
+        const outputContent = document.getElementById("output-content");
+        const execStatus = document.getElementById("exec-status");
+        const execTime = document.getElementById("exec-time");
+
+        async function executeCode() {
+            if (btnRun.disabled) return;
+
+            const code = getCode();
+            btnRun.disabled = true;
+            runSpinner.style.display = "inline-block";
+            runLabel.textContent = "Running...";
+            execStatus.className = "status-badge running";
+            execStatus.textContent = "Executing in microVM...";
+            execTime.style.display = "none";
+            outputContent.textContent = "Booting isolated Firecracker microVM & compiling...";
+
+            try {
+                const res = await fetch("/run", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ code })
+                });
+
+                if (!res.ok) {
+                    throw new Error(`HTTP error ${res.status}`);
+                }
+
+                const data = await res.json();
+                execTime.style.display = "inline";
+                execTime.textContent = `${(data.elapsed_ms / 1000).toFixed(2)}s`;
+
+                if (data.error) {
+                    execStatus.className = "status-badge error";
+                    execStatus.textContent = "Error";
+                    outputContent.textContent = stripAnsi(data.error);
+                } else {
+                    execStatus.className = "status-badge success";
+                    execStatus.textContent = "Success";
+                    outputContent.textContent = stripAnsi(data.stdout || "(program produced no output)");
+                }
+            } catch (err) {
+                execStatus.className = "status-badge error";
+                execStatus.textContent = "Network Error";
+                outputContent.textContent = `Failed to contact playground server: ${err.message}`;
+            } finally {
+                btnRun.disabled = false;
+                runSpinner.style.display = "none";
+                runLabel.textContent = "Run";
+            }
+        }
+
+        btnRun.addEventListener("click", executeCode);
+        btnReset.addEventListener("click", () => setCode(DEFAULT_CODE));
+
+        // Keyboard shortcut: Ctrl+Enter or Cmd+Enter
+        window.addEventListener("keydown", (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+                e.preventDefault();
+                executeCode();
+            }
+        });
+    </script>
 </body>
 </html>

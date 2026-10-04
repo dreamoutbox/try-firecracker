@@ -168,14 +168,14 @@ and runs a minimal `fn main()` snippet using the toolchain image.
 **Goal**: Single-file editor UI — no build step, no npm.
 
 **Tasks**:
-- [ ] Load CodeMirror 6 and `@codemirror/lang-rust` via ESM CDN (`esm.sh` or `cdn.jsdelivr.net`).
-- [ ] Rust syntax highlighting; dark theme (`oneDark` or custom).
-- [ ] "Run" button: POST to `/run`, display output in a pane below the editor.
-- [ ] Spinner/disabled state while running; re-enable on response.
-- [ ] Show `elapsed_ms` in output pane footer.
-- [ ] Default snippet: `fn main() {\n    println!(\"Hello from Firecracker!\");\n}`.
-- [ ] Keyboard shortcut: `Ctrl+Enter` to run.
-- [ ] Minimal chrome: editor fills the viewport, output pane below. Dark background.
+- [x] Load CodeMirror 6 and `@codemirror/lang-rust` via ESM CDN (`esm.sh` or `cdn.jsdelivr.net`).
+- [x] Rust syntax highlighting; dark theme (`oneDark` or custom).
+- [x] "Run" button: POST to `/run`, display output in a pane below the editor.
+- [x] Spinner/disabled state while running; re-enable on response.
+- [x] Show `elapsed_ms` in output pane footer.
+- [x] Default snippet: `fn main() {\n    println!(\"Hello from Firecracker!\");\n}`.
+- [x] Keyboard shortcut: `Ctrl+Enter` to run.
+- [x] Minimal chrome: editor fills the viewport, output pane below. Dark background.
 
 **Done when**: UI loads at `http://localhost:3000`, user can edit and run code, output appears.
 
