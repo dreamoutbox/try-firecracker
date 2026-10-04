@@ -84,9 +84,9 @@ plan-3/run.sh                         [init]
 **Goal:** Provide Firecracker VM JSON configuration and executable runner script `plan-3/run.sh`.
 
 **Tasks:**
-- [ ] Create `plan-3/vm_config.json` with 2 vCPUs, 512 MiB RAM, `assets/vmlinux`, `boot_args="console=ttyS0 reboot=k panic=1 init=/init"`, and `assets/rust-playground.ext4` root drive
-- [ ] Create `plan-3/run.sh` ensuring setup runs, validating KVM, and executing Firecracker with `--no-api --config-file` from repository root
-- [ ] Make `plan-3/run.sh` executable (`chmod +x`)
+- [x] Create `plan-3/vm_config.json` with 2 vCPUs, 512 MiB RAM, `assets/vmlinux`, `boot_args="console=ttyS0 reboot=k panic=1 init=/init"`, and `assets/rust-playground.ext4` root drive
+- [x] Create `plan-3/run.sh` ensuring setup runs, validating KVM, and executing Firecracker with `--no-api --config-file` from repository root
+- [x] Make `plan-3/run.sh` executable (`chmod +x`)
 
 **Done when:** `plan-3/vm_config.json` is valid JSON with relative paths, and `plan-3/run.sh` is executable.
 
