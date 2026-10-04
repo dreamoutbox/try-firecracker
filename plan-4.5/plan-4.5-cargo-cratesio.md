@@ -82,16 +82,16 @@ Firecracker:                                   → ip link set lo up
 ### Phase 3: Firecracker VM Configuration & Runner Script
 - Goal: Create `plan-4.5/vm_config.json` with TAP network interface and 1024 MiB RAM, and executable runner script `plan-4.5/run.sh`.
 - Tasks:
-  - [ ] Create `plan-4.5/vm_config.json`:
+  - [x] Create `plan-4.5/vm_config.json`:
     - `boot-source`: `assets/vmlinux`, `boot_args="console=ttyS0 reboot=k panic=1 init=/init"`
     - `drives`: `assets/rust-cratesio.ext4` (root device, read/write)
     - `machine-config`: `vcpu_count: 2`, `mem_size_mib: 1024`
     - `network-interfaces`: `iface_id: "net0"`, `guest_mac: "AA:FC:00:00:00:01"`, `host_dev_name: "tap0"`
-  - [ ] Create `plan-4.5/run.sh`:
+  - [x] Create `plan-4.5/run.sh`:
     - Ensure host TAP and NAT are configured (calling `plan-4/net-setup.sh`)
     - Ensure rootfs image is built (calling `plan-4.5/setup.sh`)
     - Execute Firecracker with `--no-api --config-file plan-4.5/vm_config.json` from repository root
-  - [ ] Set executable permissions on `plan-4.5/run.sh` (`chmod +x`)
+  - [x] Set executable permissions on `plan-4.5/run.sh` (`chmod +x`)
 - Done when: `plan-4.5/vm_config.json` is valid JSON and `plan-4.5/run.sh` is executable.
 
 ---
