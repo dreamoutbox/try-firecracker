@@ -23,6 +23,7 @@ const MAX_CONCURRENT_RUNS: usize = 4;
 struct AppState {
     repo_root: Arc<PathBuf>,
     semaphore: Arc<Semaphore>,
+    timeout_duration: Duration,
 }
 
 #[derive(Deserialize)]
@@ -80,7 +81,7 @@ async fn run_handler(
         &state.repo_root,
         &workspace_ext4,
         &run_id,
-        Duration::from_secs(DEFAULT_TIMEOUT_SECS),
+        state.timeout_duration,
     )
     .await;
 
@@ -143,9 +144,15 @@ async fn main() -> Result<()> {
     let repo_root = runner::find_repo_root().context("failed to locate repo root")?;
     info!(repo_root = %repo_root.display(), "located repository root");
 
+    let timeout_secs: u64 = std::env::var("TIMEOUT_SECS")
+        .ok()
+        .and_then(|t| t.parse().ok())
+        .unwrap_or(DEFAULT_TIMEOUT_SECS);
+
     let state = AppState {
         repo_root: Arc::new(repo_root),
         semaphore: Arc::new(Semaphore::new(MAX_CONCURRENT_RUNS)),
+        timeout_duration: Duration::from_secs(timeout_secs),
     };
 
     let app = Router::new()

@@ -186,13 +186,13 @@ and runs a minimal `fn main()` snippet using the toolchain image.
 **Goal**: End-to-end working server ready to run with a single command.
 
 **Tasks**:
-- [ ] Write `rust-playground-server/README.md` with prerequisites and `make serve` instructions.
-- [ ] Add root `Makefile` target `serve`: runs `rust-playground-server/setup.sh` then
+- [x] Write `rust-playground-server/README.md` with prerequisites and `make serve` instructions.
+- [x] Add root `Makefile` target `serve`: runs `rust-playground-server/setup.sh` then
       `cargo run --release --manifest-path rust-playground-server/Cargo.toml`.
-- [ ] Verify concurrent requests: 2 browser tabs run simultaneously without interference.
-- [ ] Verify timeout: snippet with `loop {}` returns `"Execution timed out"` within ~31 seconds.
-- [ ] Update `../TODO.md` checkboxes.
-- [ ] Commit: `feat(rust-playground-server): initial working playground server`.
+- [x] Verify concurrent requests: 2 browser tabs run simultaneously without interference.
+- [x] Verify timeout: snippet with `loop {}` returns `"Execution timed out"` within configured timeout window.
+- [x] Update `../TODO.md` checkboxes.
+- [x] Commit: `feat(rust-playground-server): initial working playground server`.
 
 **Done when**: `make serve` starts the server from a clean checkout; end-to-end smoke test passes.
 
