@@ -96,16 +96,16 @@ Firecracker:                                   → ip link set lo up
 ### Phase 4: Firecracker VM Configuration & Runner Script
 - Goal: Provide Firecracker VM JSON configuration with virtio-net interface and executable runner script `plan-4/run.sh`.
 - Tasks:
-  - [ ] Create `plan-4/vm_config.json`:
+  - [x] Create `plan-4/vm_config.json`:
     - `boot-source`: `assets/vmlinux`, `boot_args="console=ttyS0 reboot=k panic=1 init=/init"`
     - `drives`: `assets/alpine-net.ext4` (root device, read/write)
     - `machine-config`: `vcpu_count: 1`, `mem_size_mib: 256`
     - `network-interfaces`: `iface_id: "net0"`, `guest_mac: "AA:FC:00:00:00:01"`, `host_dev_name: "tap0"`
-  - [ ] Create `plan-4/run.sh`:
+  - [x] Create `plan-4/run.sh`:
     - Ensure host network setup is active (calling `plan-4/net-setup.sh`)
     - Ensure rootfs image exists (calling `plan-4/setup.sh`)
     - Execute Firecracker with `--no-api --config-file plan-4/vm_config.json` from repository root
-  - [ ] Set executable permissions on `plan-4/run.sh` (`chmod +x`)
+  - [x] Set executable permissions on `plan-4/run.sh` (`chmod +x`)
 - Done when: `plan-4/vm_config.json` is valid JSON referencing relative paths and `network-interfaces`, and `plan-4/run.sh` is executable.
 
 ---
