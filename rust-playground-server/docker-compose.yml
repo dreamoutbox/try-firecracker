@@ -1,0 +1,20 @@
+services:
+  playground-server:
+    build:
+      context: ..
+      dockerfile: rust-playground-server/Dockerfile
+    image: rust-playground-server:latest
+    container_name: rust-playground-server
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    devices:
+      - /dev/kvm:/dev/kvm
+    tmpfs:
+      - /tmp:rw,exec
+    volumes:
+      - ../assets:/app/assets:ro
+    environment:
+      - PORT=3000
+      - REPO_ROOT=/app
+      - RUST_LOG=info

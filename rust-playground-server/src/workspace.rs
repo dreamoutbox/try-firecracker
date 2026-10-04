@@ -1,7 +1,7 @@
 #![allow(dead_code)]
 
-use std::path::PathBuf;
 use anyhow::{Context, Result, bail};
+use std::path::PathBuf;
 use tokio::fs;
 use tokio::process::Command;
 use uuid::Uuid;
@@ -18,9 +18,12 @@ pub(crate) async fn create(code: &str, run_id: &Uuid) -> Result<PathBuf> {
     let staging_dir = base_dir.join("staging");
     let src_dir = staging_dir.join("src");
 
-    fs::create_dir_all(&src_dir)
-        .await
-        .with_context(|| format!("failed to create staging directory at {}", src_dir.display()))?;
+    fs::create_dir_all(&src_dir).await.with_context(|| {
+        format!(
+            "failed to create staging directory at {}",
+            src_dir.display()
+        )
+    })?;
 
     fs::write(staging_dir.join("Cargo.toml"), CARGO_TEMPLATE)
         .await
@@ -34,9 +37,7 @@ pub(crate) async fn create(code: &str, run_id: &Uuid) -> Result<PathBuf> {
     let staging_str = staging_dir
         .to_str()
         .context("staging path is not valid UTF-8")?;
-    let ext4_str = ext4_path
-        .to_str()
-        .context("ext4 path is not valid UTF-8")?;
+    let ext4_str = ext4_path.to_str().context("ext4 path is not valid UTF-8")?;
     let size_arg = format!("{}M", WORKSPACE_SIZE_MIB);
 
     let status = Command::new("mkfs.ext4")
@@ -55,9 +56,12 @@ pub(crate) async fn create(code: &str, run_id: &Uuid) -> Result<PathBuf> {
 pub(crate) async fn cleanup(run_id: &Uuid) -> Result<()> {
     let base_dir = workspace_dir(run_id);
     if fs::try_exists(&base_dir).await.unwrap_or(false) {
-        fs::remove_dir_all(&base_dir)
-            .await
-            .with_context(|| format!("failed to remove workspace directory {}", base_dir.display()))?;
+        fs::remove_dir_all(&base_dir).await.with_context(|| {
+            format!(
+                "failed to remove workspace directory {}",
+                base_dir.display()
+            )
+        })?;
     }
     Ok(())
 }

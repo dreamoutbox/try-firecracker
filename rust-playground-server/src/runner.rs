@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 
+use anyhow::{Context, Result, bail};
 use std::path::{Path, PathBuf};
 use std::process::Stdio;
 use std::time::Duration;
-use anyhow::{Context, Result, bail};
 use tokio::fs;
 use tokio::process::Command;
 use uuid::Uuid;
@@ -43,11 +43,7 @@ pub(crate) fn extract_playground_output(raw: &str) -> String {
     raw.trim().to_string()
 }
 
-pub(crate) async fn run(
-    repo_root: &Path,
-    workspace_ext4: &Path,
-    run_id: &Uuid,
-) -> Result<String> {
+pub(crate) async fn run(repo_root: &Path, workspace_ext4: &Path, run_id: &Uuid) -> Result<String> {
     let run_dir = crate::workspace::workspace_dir(run_id);
     let config_path = run_dir.join("vm_config.json");
 
@@ -80,8 +76,8 @@ pub(crate) async fn run(
         }
     });
 
-    let config_json = serde_json::to_string_pretty(&vm_config)
-        .context("failed to serialize vm_config.json")?;
+    let config_json =
+        serde_json::to_string_pretty(&vm_config).context("failed to serialize vm_config.json")?;
     fs::write(&config_path, config_json)
         .await
         .context("failed to write vm_config.json")?;
@@ -117,12 +113,9 @@ pub(crate) async fn run_with_timeout(
     run_id: &Uuid,
     timeout_duration: Duration,
 ) -> Result<String> {
-    tokio::time::timeout(
-        timeout_duration,
-        run(repo_root, workspace_ext4, run_id),
-    )
-    .await
-    .map_err(|_| anyhow::anyhow!("Execution timed out"))?
+    tokio::time::timeout(timeout_duration, run(repo_root, workspace_ext4, run_id))
+        .await
+        .map_err(|_| anyhow::anyhow!("Execution timed out"))?
 }
 
 #[cfg(test)]

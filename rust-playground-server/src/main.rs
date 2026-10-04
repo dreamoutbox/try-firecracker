@@ -6,10 +6,10 @@ use std::sync::Arc;
 use std::time::{Duration, Instant};
 
 use anyhow::{Context, Result};
+use axum::Router;
 use axum::extract::State;
 use axum::response::{Html, IntoResponse, Json};
 use axum::routing::{get, post};
-use axum::Router;
 use serde::{Deserialize, Serialize};
 use tokio::sync::Semaphore;
 use tracing::{error, info, warn};
@@ -92,7 +92,11 @@ async fn run_handler(
 
     match result {
         Ok(stdout) => {
-            info!(?run_id, elapsed_ms = start_time.elapsed().as_millis(), "run completed successfully");
+            info!(
+                ?run_id,
+                elapsed_ms = start_time.elapsed().as_millis(),
+                "run completed successfully"
+            );
             Json(RunResponse {
                 stdout: Some(stdout),
                 error: None,
@@ -166,11 +170,11 @@ async fn main() -> Result<()> {
         .unwrap_or(3000);
 
     let addr = format!("0.0.0.0:{}", port);
+    info!("rust-playground-server running on http://{}", addr);
+
     let listener = tokio::net::TcpListener::bind(&addr)
         .await
         .with_context(|| format!("failed to bind listener on {addr}"))?;
-
-    info!("rust-playground-server running on http://{}", addr);
 
     axum::serve(listener, app)
         .with_graceful_shutdown(shutdown_signal())
