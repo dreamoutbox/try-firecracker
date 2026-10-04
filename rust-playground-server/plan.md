@@ -85,17 +85,17 @@ rust-playground-server/
 `guest-init/init.sh` that mounts a second writable workspace drive.
 
 **Tasks**:
-- [ ] Write `setup.sh` reusing `plan-3/setup.sh` helpers to build `assets/rust-toolchain.ext4`
+- [x] Write `setup.sh` reusing `plan-3/setup.sh` helpers to build `assets/rust-toolchain.ext4`
       (Alpine minirootfs + rust + cargo, no source code baked in).
-- [ ] Write `guest-init/init.sh`:
+- [x] Write `guest-init/init.sh`:
       - Mount `/proc`, `/sys`.
       - Export standard `PATH`, `HOME=/root`, `CARGO_HOME=/root/.cargo`.
       - Mount `/dev/vdb` at `/workspace` (`mount /dev/vdb /workspace`).
       - `cd /workspace && cargo build --offline --release -q 2>&1`.
       - Execute `./target/release/user_code`.
       - `reboot -f`.
-- [ ] Copy `guest-init/init.sh` into the toolchain rootfs staging directory as `/init` during `setup.sh`.
-- [ ] Verify: `./setup.sh` completes without root; `assets/rust-toolchain.ext4` contains `/usr/bin/rustc` and `/init`.
+- [x] Copy `guest-init/init.sh` into the toolchain rootfs staging directory as `/init` during `setup.sh`.
+- [x] Verify: `./setup.sh` completes without root; `assets/rust-toolchain.ext4` contains `/usr/bin/rustc` and `/init`.
 
 **Done when**: A manual Firecracker invocation with a hand-crafted workspace drive successfully compiles
 and runs a minimal `fn main()` snippet using the toolchain image.
