@@ -107,15 +107,15 @@ and runs a minimal `fn main()` snippet using the toolchain image.
 **Goal**: Rust function that takes a code string and produces a small ext4 workspace image on disk.
 
 **Tasks**:
-- [ ] Add crate `Cargo.toml` with deps: `axum`, `tokio` (full), `uuid` (v4), `anyhow`, `tracing`, `tracing-subscriber`.
-- [ ] Implement `workspace::create(code: &str, run_id: &Uuid) -> anyhow::Result<PathBuf>`:
+- [x] Add crate `Cargo.toml` with deps: `axum`, `tokio` (full), `uuid` (v4), `anyhow`, `tracing`, `tracing-subscriber`.
+- [x] Implement `workspace::create(code: &str, run_id: &Uuid) -> anyhow::Result<PathBuf>`:
       - Create `/tmp/run-<id>/staging/src/`.
       - Write template `Cargo.toml` (package name `user_code`, edition 2024, no external deps).
       - Write `src/main.rs` with user code.
       - Run `mkfs.ext4 -d /tmp/run-<id>/staging /tmp/run-<id>/code.ext4 64M`.
       - Return path to `code.ext4`.
-- [ ] Implement `workspace::cleanup(run_id: &Uuid)`: `tokio::fs::remove_dir_all("/tmp/run-<id>/")`.
-- [ ] Unit test: create workspace from `r#"fn main(){println!("hi");}"#`, assert ext4 path exists.
+- [x] Implement `workspace::cleanup(run_id: &Uuid)`: `tokio::fs::remove_dir_all("/tmp/run-<id>/")`.
+- [x] Unit test: create workspace from `r#"fn main(){println!("hi");}"#`, assert ext4 path exists.
 
 **Done when**: `cargo test -p rust-playground-server workspace` passes.
 
