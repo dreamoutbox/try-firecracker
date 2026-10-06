@@ -82,10 +82,10 @@ serial console (ttyS0) and exits.
 ### Phase 3: Build a Custom Rootfs with Hello World Init
 
 - **Goal**: Create an ext4 rootfs that, on first boot, runs a shell script
-  printing "Hello, World!" then poweroffs.
+  printing "Hello, World!" then powers off.
 - **Tasks**:
   - [ ] Unpack the squashfs: `unsquashfs ubuntu.squashfs.upstream`
-  - [ ] Write `scripts/hello-init.sh` (the in-VM init replacement):
+  - [ ] Write `plan-1/init.sh` (the in-VM init replacement):
     ```sh
     #!/bin/sh
     # Mount essential virtual filesystems
@@ -96,80 +96,52 @@ serial console (ttyS0) and exits.
     echo "Hello, World!"
 
     # Graceful shutdown — sends reboot=k (keyboard) signal Firecracker understands
-    echo o > /proc/sysrq-trigger
+    reboot -f 2>/dev/null || echo o > /proc/sysrq-trigger
     ```
   - [ ] Copy the script into the rootfs and register it as the init:
     ```bash
-    cp scripts/hello-init.sh squashfs-root/hello-init.sh
-    chmod +x squashfs-root/hello-init.sh
+    cp plan-1/init.sh squashfs-root/init
+    chmod +x squashfs-root/init
     ```
   - [ ] Pack the squashfs-root into an ext4 image:
     ```bash
     truncate -s 512M ubuntu.ext4
-    sudo mkfs.ext4 -d squashfs-root -F ubuntu.ext4
+    mkfs.ext4 -d squashfs-root -F ubuntu.ext4
     ```
   - [ ] Verify: `e2fsck -fn ubuntu.ext4`
-- **Done when**: `ubuntu.ext4` passes `e2fsck` and contains `/hello-init.sh`.
+- **Done when**: `ubuntu.ext4` passes `e2fsck` and contains `/init`.
 
 ---
 
 ### Phase 4: Configure and Boot the MicroVM
 
-- **Goal**: Boot the VM via Firecracker's REST API and observe "Hello, World!"
+- **Goal**: Boot the VM using Firecracker configuration file and observe "Hello, World!"
   on the console.
 - **Tasks**:
-  - [ ] Write `scripts/boot.sh` — orchestrates the API calls:
-    ```bash
-    #!/bin/bash
-    # Usage: ./scripts/boot.sh <firecracker-bin> <kernel> <rootfs>
-    FC=$1; KERNEL=$2; ROOTFS=$3
-    SOCKET=/tmp/firecracker-hello.socket
-    rm -f "$SOCKET"
-
-    # Start Firecracker in background, serial output goes to stdout
-    "$FC" --api-sock "$SOCKET" &
-    FC_PID=$!
-    sleep 0.5   # wait for socket to appear
-
-    api() {
-        curl -s --unix-socket "$SOCKET" \
-            -X PUT "http://localhost/$1" \
-            -H "Content-Type: application/json" \
-            -d "$2"
-    }
-
-    # Configure boot source — pass custom init via boot_args
-    api boot-source '{
-        "kernel_image_path": "'"$KERNEL"'",
-        "boot_args": "console=ttyS0 reboot=k panic=1 pci=off init=/hello-init.sh"
-    }'
-
-    # Configure rootfs drive
-    api drives/rootfs '{
-        "drive_id":       "rootfs",
-        "path_on_host":   "'"$ROOTFS"'",
-        "is_root_device": true,
-        "is_read_only":   false
-    }'
-
-    # Configure machine (1 vCPU, 128 MB RAM)
-    api machine-config '{
-        "vcpu_count":  1,
+  - [ ] Create `plan-1/vm_config.json`:
+    ```json
+    {
+      "boot-source": {
+        "kernel_image_path": "assets/vmlinux",
+        "boot_args": "console=ttyS0 reboot=k panic=1 pci=off init=/init"
+      },
+      "drives": [
+        {
+          "drive_id": "rootfs",
+          "path_on_host": "assets/ubuntu.ext4",
+          "is_root_device": true,
+          "is_read_only": false
+        }
+      ],
+      "machine-config": {
+        "vcpu_count": 1,
         "mem_size_mib": 128
-    }'
-
-    # Start the VM
-    api actions '{"action_type": "InstanceStart"}'
-
-    wait $FC_PID
+      }
+    }
     ```
-  - [ ] Make it executable: `chmod +x scripts/boot.sh`
-  - [ ] Run:
+  - [ ] Run using `plan-1/run.sh`:
     ```bash
-    sudo ./scripts/boot.sh \
-        assets/firecracker \
-        assets/vmlinux-* \
-        assets/ubuntu.ext4
+    ./plan-1/run.sh
     ```
   - [ ] Observe the Linux boot sequence on stdout, then "Hello, World!", then VM exit.
 - **Done when**: "Hello, World!" appears in the console output and the process
@@ -181,14 +153,16 @@ serial console (ttyS0) and exits.
 
 ```
 try-firecracker/
-├── PLAN.md
+├── README.md
 ├── assets/           # downloaded artifacts (gitignored — large binaries)
 │   ├── firecracker
-│   ├── vmlinux-X.Y.Z
+│   ├── vmlinux -> vmlinux-X.Y.Z
 │   └── ubuntu.ext4
-└── scripts/
-    ├── hello-init.sh   # runs inside the VM
-    └── boot.sh         # configures + starts the VM from the host
+└── plan-1/
+    ├── init.sh         # runs inside the VM
+    ├── setup.sh        # downloads artifacts and builds rootfs
+    ├── run.sh          # launches Firecracker microVM
+    └── vm_config.json  # Firecracker VM config
 ```
 
 Add to `.gitignore`:

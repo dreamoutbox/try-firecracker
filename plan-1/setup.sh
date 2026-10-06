@@ -1,67 +1,149 @@
 #!/usr/bin/env bash
+# Setup artifacts and environment for Plan 1 (Ubuntu rootfs + Firecracker).
+# Privileged operations (package install, /dev/kvm setup) automatically use sudo.
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 ASSETS_DIR="${REPO_ROOT}/assets"
 ARCH="$(uname -m)"
+TARGET_USER="${SUDO_USER:-$USER}"
 
 mkdir -p "${ASSETS_DIR}"
 
-# Verify required host utilities
-for cmd in curl wget truncate mkfs.ext4 unsquashfs; do
-    if ! command -v "$cmd" >/dev/null 2>&1; then
-        echo "Error: missing required dependency '$cmd'. Please install it first." >&2
-        exit 1
+# Helper: run command with elevated privileges only if needed
+run_privileged() {
+    if [ "$EUID" -eq 0 ]; then
+        "$@"
+    else
+        sudo "$@"
     fi
-done
+}
 
-# Check KVM availability
-if [ ! -e /dev/kvm ]; then
-    echo "Warning: /dev/kvm device node does not exist. Ensure KVM kernel module is loaded." >&2
-elif [ ! -r /dev/kvm ] || [ ! -w /dev/kvm ]; then
-    echo "Notice: /dev/kvm is not writable by user '$USER'. Running Firecracker will require sudo or kvm group membership."
-fi
+# Helper: ensure required host utilities; install via apt if missing
+ensure_dependencies() {
+    local missing_pkgs=()
+    for cmd in curl wget truncate mkfs.ext4 unsquashfs; do
+        if ! command -v "$cmd" >/dev/null 2>&1; then
+            case "$cmd" in
+                mkfs.ext4) missing_pkgs+=("e2fsprogs") ;;
+                truncate) missing_pkgs+=("coreutils") ;;
+                unsquashfs) missing_pkgs+=("squashfs-tools") ;;
+                *) missing_pkgs+=("$cmd") ;;
+            esac
+        fi
+    done
 
-# Download Firecracker binary
-if [ ! -x "${ASSETS_DIR}/firecracker" ]; then
-    echo "Fetching latest Firecracker binary for ${ARCH}..."
-    RELEASE_URL="https://github.com/firecracker-microvm/firecracker/releases"
-    LATEST="$(basename "$(curl -fsSLI -o /dev/null -w "%{url_effective}" "${RELEASE_URL}/latest")")"
-    TMP_DIR="$(mktemp -d)"
-    curl -fsSL "${RELEASE_URL}/download/${LATEST}/firecracker-${LATEST}-${ARCH}.tgz" | tar -xz -C "${TMP_DIR}"
-    mv "${TMP_DIR}/release-${LATEST}-${ARCH}/firecracker-${LATEST}-${ARCH}" "${ASSETS_DIR}/firecracker"
-    chmod +x "${ASSETS_DIR}/firecracker"
-    rm -rf "${TMP_DIR}"
-fi
+    if [ ${#missing_pkgs[@]} -gt 0 ]; then
+        if command -v apt-get >/dev/null 2>&1; then
+            echo "Installing missing packages with sudo: ${missing_pkgs[*]}..."
+            run_privileged apt-get update -qq
+            run_privileged apt-get install -y -qq "${missing_pkgs[@]}"
+        else
+            echo "Error: missing tools (${missing_pkgs[*]}); please install them." >&2
+            exit 1
+        fi
+    fi
+}
 
-# Download Linux kernel binary from Firecracker CI
-KERNEL_FILE="$(find "${ASSETS_DIR}" -maxdepth 1 -name 'vmlinux-*' | head -n 1 || true)"
-if [ -z "${KERNEL_FILE}" ] || [ ! -f "${KERNEL_FILE}" ]; then
-    echo "Fetching latest kernel image from Firecracker CI S3..."
-    S3="https://s3.amazonaws.com/spec.ccfc.min"
-    CI_PREFIX="$(curl -fsSL "$S3?list-type=2&prefix=firecracker-ci/&delimiter=/" \
-        | grep -oP "(?<=<Prefix>)firecracker-ci/[0-9]{8}-[^/]+/(?=</Prefix>)" \
-        | sort | tail -n 1)"
-    KERNEL_KEY="$(curl -fsSL "$S3?list-type=2&prefix=${CI_PREFIX}${ARCH}/vmlinux-" \
-        | grep -oP "(?<=<Key>)(${CI_PREFIX}${ARCH}/vmlinux-[0-9]+\.[0-9]+\.[0-9]{1,3})(?=</Key>)" \
-        | sort -V | tail -n 1)"
-    wget -q --show-progress -O "${ASSETS_DIR}/$(basename "${KERNEL_KEY}")" "$S3/${KERNEL_KEY}"
-    KERNEL_FILE="${ASSETS_DIR}/$(basename "${KERNEL_KEY}")"
-fi
+# Helper: ensure /dev/kvm permissions and access
+ensure_kvm() {
+    if [ ! -e /dev/kvm ]; then
+        echo "Attempting to load KVM module..."
+        run_privileged modprobe kvm || true
+        if grep -q "vmx" /proc/cpuinfo; then
+            run_privileged modprobe kvm_intel || true
+        elif grep -q "svm" /proc/cpuinfo; then
+            run_privileged modprobe kvm_amd || true
+        fi
+    fi
 
-# Download rootfs squashfs and build ext4 image
-if [ ! -f "${ASSETS_DIR}/ubuntu.ext4" ]; then
-    if [ ! -f "${ASSETS_DIR}/ubuntu.squashfs.upstream" ]; then
-        echo "Fetching Ubuntu squashfs rootfs from Firecracker CI S3..."
-        S3="https://s3.amazonaws.com/spec.ccfc.min"
-        CI_PREFIX="$(curl -fsSL "$S3?list-type=2&prefix=firecracker-ci/&delimiter=/" \
+    if [ ! -e /dev/kvm ]; then
+        echo "Warning: /dev/kvm not found. Ensure nested virtualization is enabled on host." >&2
+        return 0
+    fi
+
+    # Set permissions on /dev/kvm if not already writable
+    if [ ! -r /dev/kvm ] || [ ! -w /dev/kvm ]; then
+        echo "Configuring /dev/kvm permissions (0666)..."
+        run_privileged chmod 666 /dev/kvm
+
+        if getent group kvm >/dev/null 2>&1; then
+            run_privileged usermod -aG kvm "${TARGET_USER}" || true
+        fi
+
+        if [ -d /etc/udev/rules.d ] && [ ! -f /etc/udev/rules.d/99-kvm.rules ]; then
+            echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666"' | run_privileged tee /etc/udev/rules.d/99-kvm.rules >/dev/null
+            run_privileged udevadm control --reload-rules >/dev/null 2>&1 || true
+            run_privileged udevadm trigger --name-match=kvm >/dev/null 2>&1 || true
+        fi
+    fi
+}
+
+# Helper: ensure Firecracker binary exists
+ensure_firecracker() {
+    local fc_bin="${ASSETS_DIR}/firecracker"
+    if [ ! -x "${fc_bin}" ]; then
+        echo "Fetching latest Firecracker binary for ${ARCH}..."
+        local release_url="https://github.com/firecracker-microvm/firecracker/releases"
+        local latest
+        latest="$(basename "$(curl -fsSLI -o /dev/null -w "%{url_effective}" "${release_url}/latest")")"
+        local tmp_dir
+        tmp_dir="$(mktemp -d)"
+        curl -fsSL "${release_url}/download/${latest}/firecracker-${latest}-${ARCH}.tgz" | tar -xz -C "${tmp_dir}"
+        mv "${tmp_dir}/release-${latest}-${ARCH}/firecracker-${latest}-${ARCH}" "${fc_bin}"
+        chmod +x "${fc_bin}"
+        rm -rf "${tmp_dir}"
+    fi
+}
+
+# Helper: ensure kernel exists and assets/vmlinux symlink points to it
+ensure_kernel() {
+    local kernel_file
+    kernel_file="$(find "${ASSETS_DIR}" -maxdepth 1 -name 'vmlinux-*' | head -n 1 || true)"
+    if [ -z "${kernel_file}" ] || [ ! -f "${kernel_file}" ]; then
+        echo "Fetching kernel image from Firecracker CI S3..."
+        local s3="https://s3.amazonaws.com/spec.ccfc.min"
+        local ci_prefix
+        ci_prefix="$(curl -fsSL "$s3?list-type=2&prefix=firecracker-ci/&delimiter=/" \
             | grep -oP "(?<=<Prefix>)firecracker-ci/[0-9]{8}-[^/]+/(?=</Prefix>)" \
             | sort | tail -n 1)"
-        ROOTFS_KEY="$(curl -fsSL "$S3?list-type=2&prefix=${CI_PREFIX}${ARCH}/ubuntu-" \
-            | grep -oP "(?<=<Key>)(${CI_PREFIX}${ARCH}/ubuntu-[0-9]+\.[0-9]+\.squashfs)(?=</Key>)" \
+        local kernel_key
+        kernel_key="$(curl -fsSL "$s3?list-type=2&prefix=${ci_prefix}${ARCH}/vmlinux-" \
+            | grep -oP "(?<=<Key>)(${ci_prefix}${ARCH}/vmlinux-[0-9]+\.[0-9]+\.[0-9]{1,3})(?=</Key>)" \
             | sort -V | tail -n 1)"
-        wget -q --show-progress -O "${ASSETS_DIR}/ubuntu.squashfs.upstream" "$S3/${ROOTFS_KEY}"
+        wget -q --show-progress -O "${ASSETS_DIR}/$(basename "${kernel_key}")" "$s3/${kernel_key}"
+        kernel_file="${ASSETS_DIR}/$(basename "${kernel_key}")"
+    fi
+
+    # Create/update relative symlink assets/vmlinux -> vmlinux-*
+    local kernel_name
+    kernel_name="$(basename "${kernel_file}")"
+    ln -sfn "${kernel_name}" "${ASSETS_DIR}/vmlinux"
+}
+
+# Helper: ensure Ubuntu rootfs image with guest init
+ensure_ubuntu_rootfs() {
+    local rootfs_img="${ASSETS_DIR}/ubuntu.ext4"
+    local init_script="${SCRIPT_DIR}/init.sh"
+
+    # Rebuild if rootfs does not exist, or init script is newer than rootfs image
+    if [ -f "${rootfs_img}" ] && [ "${rootfs_img}" -nt "${init_script}" ]; then
+        return 0
+    fi
+
+    if [ ! -f "${ASSETS_DIR}/ubuntu.squashfs.upstream" ]; then
+        echo "Fetching Ubuntu squashfs rootfs from Firecracker CI S3..."
+        local s3="https://s3.amazonaws.com/spec.ccfc.min"
+        local ci_prefix
+        ci_prefix="$(curl -fsSL "$s3?list-type=2&prefix=firecracker-ci/&delimiter=/" \
+            | grep -oP "(?<=<Prefix>)firecracker-ci/[0-9]{8}-[^/]+/(?=</Prefix>)" \
+            | sort | tail -n 1)"
+        local rootfs_key
+        rootfs_key="$(curl -fsSL "$s3?list-type=2&prefix=${ci_prefix}${ARCH}/ubuntu-" \
+            | grep -oP "(?<=<Key>)(${ci_prefix}${ARCH}/ubuntu-[0-9]+\.[0-9]+\.squashfs)(?=</Key>)" \
+            | sort -V | tail -n 1)"
+        wget -q --show-progress -O "${ASSETS_DIR}/ubuntu.squashfs.upstream" "$s3/${rootfs_key}"
     fi
 
     if [ ! -d "${ASSETS_DIR}/squashfs-root" ]; then
@@ -69,31 +151,67 @@ if [ ! -f "${ASSETS_DIR}/ubuntu.ext4" ]; then
         unsquashfs -q -d "${ASSETS_DIR}/squashfs-root" "${ASSETS_DIR}/ubuntu.squashfs.upstream"
     fi
 
-    INIT_SRC="${SCRIPT_DIR}/hello-init.sh"
-    if [ ! -f "${INIT_SRC}" ]; then
-        cat <<'INIT_EOF' > "${INIT_SRC}"
-#!/bin/sh
-mount -t proc proc /proc
-mount -t sysfs sysfs /sys
-mount -t devtmpfs devtmpfs /dev 2>/dev/null || true
-
-echo "Hello, World!"
-
-echo o > /proc/sysrq-trigger
-INIT_EOF
-        chmod +x "${INIT_SRC}"
-    fi
-
-    cp "${INIT_SRC}" "${ASSETS_DIR}/squashfs-root/hello-init.sh"
+    echo "Installing guest /init..."
+    cp "${init_script}" "${ASSETS_DIR}/squashfs-root/init"
+    chmod +x "${ASSETS_DIR}/squashfs-root/init"
+    cp "${init_script}" "${ASSETS_DIR}/squashfs-root/hello-init.sh"
     chmod +x "${ASSETS_DIR}/squashfs-root/hello-init.sh"
 
     echo "Building ubuntu.ext4 filesystem image..."
-    truncate -s 512M "${ASSETS_DIR}/ubuntu.ext4"
-    mkfs.ext4 -d "${ASSETS_DIR}/squashfs-root" -F "${ASSETS_DIR}/ubuntu.ext4" >/dev/null 2>&1
-    e2fsck -fn "${ASSETS_DIR}/ubuntu.ext4" >/dev/null 2>&1 || true
-fi
+    truncate -s 512M "${rootfs_img}"
+    mkfs.ext4 -d "${ASSETS_DIR}/squashfs-root" -F "${rootfs_img}" >/dev/null 2>&1
+    e2fsck -fn "${rootfs_img}" >/dev/null 2>&1 || true
+}
 
-echo "Setup complete. MicroVM artifacts ready:"
-echo "  Firecracker : ${ASSETS_DIR}/firecracker"
-echo "  Kernel      : ${KERNEL_FILE}"
-echo "  Rootfs      : ${ASSETS_DIR}/ubuntu.ext4"
+# Helper: ensure vm_config.json exists
+ensure_vm_config() {
+    local config_file="${SCRIPT_DIR}/vm_config.json"
+    if [ ! -f "${config_file}" ]; then
+        echo "Creating ${config_file}..."
+        cat << 'EOF' > "${config_file}"
+{
+  "boot-source": {
+    "kernel_image_path": "assets/vmlinux",
+    "boot_args": "console=ttyS0 reboot=k panic=1 pci=off init=/init"
+  },
+  "drives": [
+    {
+      "drive_id": "rootfs",
+      "path_on_host": "assets/ubuntu.ext4",
+      "is_root_device": true,
+      "is_read_only": false
+    }
+  ],
+  "machine-config": {
+    "vcpu_count": 1,
+    "mem_size_mib": 128
+  }
+}
+EOF
+    fi
+}
+
+# Helper: preserve non-root file ownership if script was run under sudo
+fix_ownership() {
+    if [ -n "${SUDO_USER:-}" ] && [ "$EUID" -eq 0 ]; then
+        chown -R "${SUDO_USER}:${SUDO_USER}" "${ASSETS_DIR}" "${SCRIPT_DIR}/vm_config.json" 2>/dev/null || true
+    fi
+}
+
+main() {
+    ensure_dependencies
+    ensure_kvm
+    ensure_firecracker
+    ensure_kernel
+    ensure_ubuntu_rootfs
+    ensure_vm_config
+    fix_ownership
+
+    echo "Plan 1 setup complete:"
+    echo "  Firecracker : assets/firecracker"
+    echo "  Kernel      : assets/vmlinux -> $(readlink "${ASSETS_DIR}/vmlinux" 2>/dev/null || echo 'vmlinux')"
+    echo "  Rootfs      : assets/ubuntu.ext4"
+    echo "  VM Config   : plan-1/vm_config.json"
+}
+
+main "$@"

@@ -19,12 +19,12 @@ Run the one-time WSL/KVM permission setup if needed:
 
 Each `plan-*` directory represents a distinct milestone in configuring, networking, and running workloads inside Firecracker:
 
-### [plan-1](./plan-1): REST API Boot (Ubuntu)
-- **Goal**: Boot an upstream Firecracker Ubuntu CI rootfs and kernel using Firecracker's Unix domain socket REST API.
-- **Key Files**: `setup.sh`, `bootstrap.sh`, `boot.sh`
+### [plan-1](./plan-1): Ubuntu Minimal Boot
+- **Goal**: Boot an upstream Firecracker Ubuntu CI rootfs and kernel. Shuts down cleanly via `reboot -f` and kernel `reboot=k`.
+- **Key Files**: `setup.sh`, `run.sh`, `init.sh`, `vm_config.json`
 - **Run**:
   ```bash
-  cd plan-1 && ./setup.sh && ./boot.sh
+  ./plan-1/run.sh
   ```
 
 ### [plan-2](./plan-2): Config File Boot (Alpine Minimal)
